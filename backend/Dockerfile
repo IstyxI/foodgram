@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY requirements/requirements.txt .
 
-RUN pip install -r requirements/requirements.txt --no-cache-dir
+RUN pip install -r requirements.txt --no-cache-dir
 
 COPY ./entrypoint.sh .
 
