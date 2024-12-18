@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
 from users.enums import UserRoles
+
 from .validators import validate_username_email
 
 
