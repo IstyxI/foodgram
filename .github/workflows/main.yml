@@ -68,6 +68,8 @@ jobs:
           sudo chown runner:runner ~/.ssh/id_rsa # Изменяем владельца на runner
           eval "$(ssh-agent -s)"
           echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
+          sudo touch ~/.ssh/known_hosts # Создаем файл known_hosts если его нет
+          sudo chown runner:runner ~/.ssh/known_hosts # Изменяем владельца
           ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy via SSH
