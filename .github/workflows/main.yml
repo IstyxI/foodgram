@@ -62,12 +62,12 @@ jobs:
 
       - name: Set up SSH Agent
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          eval "$(ssh-agent -s)"
-          echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+          sudo mkdir -p ~/.ssh
+          sudo echo "${{ secrets.SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          sudo chmod 600 ~/.ssh/id_rsa
+          sudo eval "$(ssh-agent -s)"
+          sudo echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
+          sudo ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy via SSH
         run: |
