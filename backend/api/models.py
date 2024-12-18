@@ -19,7 +19,9 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField('Название ингредиента', max_length=100, unique=True)
+    name = models.CharField(
+        'Название ингредиента', max_length=100, unique=True
+    )
     unit_of_measurement = models.CharField('Ед. измерения', max_length=20)
 
     class Meta:
@@ -152,6 +154,6 @@ class Favorite(models.Model):
                 name='unique favorite recipe for user'
             )
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.user} -> {self.recipe}"
