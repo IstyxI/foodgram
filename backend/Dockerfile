@@ -1,13 +1,17 @@
 FROM python:3.9-slim
-# Requirements for `psycorg2` and script "/app/run_app.sh".
-RUN apt-get update &&\
-    apt-get upgrade -y &&\
-    apt-get install -y libpq-dev gcc netcat-traditional
-# It also create directory `/app`.
+
 WORKDIR /app
-COPY requirements/requirements.txt ./
-RUN pip install -U pip &&\
-    pip install -r requirements.txt --no-cache-dir
+
+COPY requirements.txt .
+
+RUN pip install -r requirements.txt --no-cache-dir
+
+COPY ./entrypoint.sh .
+
+RUN chmod +x ./entrypoint.sh
+
 COPY . .
-RUN chmod +x run_app.sh
-ENTRYPOINT ["/app/run_app.sh"]
+
+ENTRYPOINT ["bash", "./entrypoint.sh"]
+
+CMD ["gunicorn", "--bind", "0.0.0.0:9000", "foodgram.wsgi"]
