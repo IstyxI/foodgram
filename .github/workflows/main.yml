@@ -16,8 +16,8 @@ jobs:
       uses: garygrossgarten/github-action-ssh@release
       with:
         host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        privateKey: ${{ secrets.PRIVATE_KEY }}
+        username: ${{ secrets.USER }}
+        privateKey: ${{ secrets.SSH_KEY }}
         command: cd projects && mkdir -p foodgram && mkdir -p foodgram/docs
 
     - name: Copy infra files
