@@ -1,6 +1,9 @@
+name: Main Foodgram workflow
+
 on:
   push:
-    branches: [ master ]
+    branches:
+      - main
 
 jobs:
   copy_files_to_server:
