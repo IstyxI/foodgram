@@ -1,13 +1,5 @@
 version: '3.3'
 services:
-
-  frontend:
-    container_name: foodgram-front
-    image: stxxxx/foodgram_front:latest
-    build: ../frontend
-    volumes:
-      - ./frontend/:/app/result_build/
-
   db:
     container_name: foodgram-db
     image: postgres:13.0-alpine
@@ -16,6 +8,15 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ../.env
+
+  frontend:
+    container_name: foodgram-front
+    image: stxxxx/foodgram_front:latest
+    build: ../frontend
+    volumes:
+      - ./frontend/:/app/result_build/
+    depends_on:
+      - db
 
   backend:
     container_name: foodgram-app
@@ -27,6 +28,8 @@ services:
       - media_dir:/app/media/
     env_file:
       - ../.env
+    depends_on:
+      - db
 
   nginx:
     container_name: foodgram-proxy
