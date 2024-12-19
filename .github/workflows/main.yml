@@ -1,112 +1,129 @@
-name: Django-app workflow
+---
+name: CI for Foodgram
 
 on:
   push:
-    paths-ignore:
-      - '**/README.md'
+    branches: [ master ]
 
 jobs:
-  tests:
-    runs-on: ubuntu-latest
-
+  copy_files_to_server:
+    name: Copy infra and docs
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v2
+
+    - name: Create projects directory
+      uses: garygrossgarten/github-action-ssh@release
       with:
-        python-version: 3.9
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        privateKey: ${{ secrets.PRIVATE_KEY }}
+        command: cd projects && mkdir -p foodgram && mkdir -p foodgram/docs
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort
-        pip install -r backend/requirements/requirements.txt
-        pip install psycopg2-binary  # Добавляем для работы Django
-    - name: Test with flake8
-      run: |
-        python -m flake8 backend
+    - name: Copy infra files
+      uses: garygrossgarten/github-action-scp@release
+      with:
+          local: infra/
+          remote: /${{ secrets.USER }}/projects/foodgram/
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          privateKey: ${{ secrets.SSH_KEY }}
 
-  build_and_push_to_docker_hub:
-    name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
-    needs: tests
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    - name: Copy docs
+      uses: garygrossgarten/github-action-scp@release
+      with:
+          local: docs
+          remote: /${{ secrets.DOCKER_USERNAME }}/projects/foodgram/docs/
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          privateKey: ${{ secrets.SSH_KEY }}
+
+  build_push_backend_to_DockerHub:
+    name: Building back image and pushing it to Docker Hub
+    runs-on: ubuntu-22.04
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Login to Docker
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v2
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/foodgram-project:latest
+    - uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to Docker
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Push "foodgram/backend" to DockerHub
+      uses: docker/build-push-action@v2
+      with:
+        context: backend/
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_back:latest
+
+  build_push_frontend_to_DockerHub:
+    name: Building front image and pushing it to Docker Hub
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to Docker
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Push "foodgram/frontend" to DockerHub
+      uses: docker/build-push-action@v2
+      with:
+        context: frontend/
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_front:latest
 
   deploy:
-    runs-on: ubuntu-latest
-    needs: build_and_push_to_docker_hub
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    needs:
+      - copy_files_to_server
+      - build_push_backend_to_DockerHub
+      - build_push_frontend_to_DockerHub
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: remote ssh commands to deploy
+      uses: garygrossgarten/github-action-ssh@release
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        privateKey: ${{ secrets.SSH_KEY }}
+        command: |
+          cd projects/foodgram/
+          echo DEBUG=${{ secrets.DEBUG }} > .env
+          echo SECRET_KEY=${{ secrets.SSH_KEY }} >> .env
+          echo ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }} >> .env
+          echo CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }} >> .env
+          echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
+          echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+          echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env
+          echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
+          echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+          echo DB_PORT=${{ secrets.DB_PORT }} >> .env
 
-      - name: Install SSH Client
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
+          sudo docker-compose stop
+          sudo docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs sudo docker rm
+          sudo docker rmi ${{ secrets.DOCKER_USERNAME }}/foodgram_front
+          sudo docker rmi ${{ secrets.DOCKER_USERNAME }}/foodgram_back
+          sudo docker-compose up -d
+          sudo docker image prune -a
+          rm -f .env
 
-      - name: Set up SSH Agent
-        run: |
-          sudo mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" | base64 -d | sudo tee ~/.ssh/id_rsa > /dev/null
-          sudo chmod 600 ~/.ssh/id_rsa
-          sudo chown runner:runner ~/.ssh/id_rsa # Изменяем владельца на runner
-          eval "$(ssh-agent -s)"
-          echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
-          sudo touch ~/.ssh/known_hosts # Создаем файл known_hosts если его нет
-          sudo chown runner:runner ~/.ssh/known_hosts # Изменяем владельца
-          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy via SSH
-        run: |
-         ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} '
-           # Команды для деплоя
-           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend
-           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/foodgram-project
-           sudo docker-compose stop
-           sudo docker-compose rm backend
-           rm .env
-           touch .env
-           echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
-           echo DB_NAME=${{ secrets.DB_NAME }} >> .env
-           echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env
-           echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
-           echo DB_HOST=${{ secrets.DB_HOST }} >> .env
-           echo DB_PORT=${{ secrets.DB_PORT }} >> .env
-           sudo docker-compose up -d
-         '
-  telegram_message:
-    name: Send telegram message
+  send_message:
     runs-on: ubuntu-latest
     needs: deploy
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.8
-      - name: install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
-      - name: send custom message with message
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: ${{ github.workflow }} успешно выполнен!
+    - name: send message
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: Деплой успешно выполнен!
+...
