@@ -108,7 +108,7 @@ jobs:
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          cd foodgram/infra
+          cd foodgram
           sudo docker-compose up -d
           sudo docker image prune -a
 
