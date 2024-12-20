@@ -12,7 +12,7 @@ services:
   frontend:
     container_name: foodgram-front
     image: stxxxx/foodgram_front:latest
-    env_file: .env
+    env_file: ../.env
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static:/frontend_static
@@ -21,7 +21,7 @@ services:
 
   backend:
     image: stxxxx/foodgram_back:latest
-    env_file: .env
+    env_file: ../.env
     volumes:
       - static:/app/collected_static
       - media:/app/media
