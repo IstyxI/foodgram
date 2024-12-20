@@ -79,7 +79,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "docker-compose.yml"
+          source: "infra/docker-compose.yml"
           target: "foodgram"
 
       - name: Executing remote ssh commands to deploy
@@ -90,26 +90,11 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            sudo rm -f .env
-            sudo touch .env
-            sudo chmod 666 .env
+            cd infra/
 
-            sudo echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
-            sudo echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
-            sudo echo DB_NAME=${{ secrets.DB_NAME }} >> .env
-            sudo echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env
-            sudo echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
-            sudo echo DB_HOST=${{ secrets.DB_HOST }} >> .env
-            sudo echo DB_PORT=${{ secrets.DB_PORT }} >> .env
-
-            sudo docker compose stop
-
-            sudo docker compose rm backend
-            sudo docker compose pull backend
-            sudo docker compose rm frontend
-            sudo docker compose pull frontend
-
-            sudo docker compose up -d --build
+            sudo docker compose -f docker-compose.yml pull
+            sudo docker compose -f docker-compose.yml down
+            sudo docker compose -f docker-compose.yml up -d
 
   send_message:
     runs-on: ubuntu-latest
