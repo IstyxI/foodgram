@@ -12,23 +12,23 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Copy infra files
-      uses: garygrossgarten/github-action-scp@release
+    - name: Copy infra folder to remote server
+      uses: appleboy/scp-action@master
       with:
-          local: infra/
-          remote: /${{ secrets.USER }}/foodgram/
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          privateKey: ${{ secrets.SSH_PASSPHRASE }}
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        source: ./infra
+        target: /home/${{ secrets.USER }}/foodgram/infra
 
-    - name: Copy docs
-      uses: garygrossgarten/github-action-scp@release
+    - name: Copy backend folder to remote server
+      uses: appleboy/scp-action@master
       with:
-          local: docs
-          remote: /${{ secrets.USER }}/foodgram/docs/
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          privateKey: ${{ secrets.SSH_KEY }}
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        source: ./backend
+        target: /home/${{ secrets.USER }}/foodgram/backend
 
   build_backend_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
