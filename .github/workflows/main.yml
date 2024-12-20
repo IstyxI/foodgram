@@ -90,7 +90,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd infra/
+            cd /home/${{ secrets.USER }}/foodgram/infra/
 
             sudo docker compose -f docker-compose.yml pull
             sudo docker compose -f docker-compose.yml down
