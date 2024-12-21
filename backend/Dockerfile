@@ -10,7 +10,7 @@ COPY ./run_app.sh .
 
 RUN chmod +x ./run_app.sh
 
-COPY backend /app/backend
+COPY . /app/backend
 
 ENTRYPOINT ["bash", "./entrypoint.sh"]
 
