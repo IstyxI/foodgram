@@ -6,9 +6,9 @@ COPY requirements/requirements.txt .
 
 RUN pip install -r requirements.txt --no-cache-dir
 
-COPY ./run_app.sh /app/run_app.sh
+COPY ./run_app.sh .
 
-RUN chmod +x /app/run_app.sh
+RUN chmod +x ./run_app.sh
 
 COPY . .
 

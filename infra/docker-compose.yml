@@ -7,8 +7,8 @@ volumes:
 
 services:
   db:
-    container_name: foodgram-db
-    image: postgres:13.0-alpine
+    platform: linux/amd64
+    image: postgres:13.0
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
@@ -35,7 +35,6 @@ services:
       - db
 
   nginx:
-    container_name: foodgram-proxy
     image: nginx:1.23.3-alpine
     restart: always
     ports:

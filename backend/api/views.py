@@ -1,6 +1,15 @@
-from rest_framework import viewsets
+from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import get_object_or_404
+from django.db.utils import IntegrityError
+
+from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+
+from users.models import User
+from users.serializers import UserCreateSerializer
+from users.utils import send_confirmation_code
 
 from .models import AmountOfIngredient, Cart, Favorite, Ingredient, Recipe, Tag
 from .pagination import LimitPageNumberPagination
@@ -61,3 +70,46 @@ class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+
+class UserCreateViewSet(mixins.CreateModelMixin,
+                        viewsets.GenericViewSet):
+    """Вьюсет для создания обьектов класса User."""
+
+    queryset = User.objects.all()
+    serializer_class = UserCreateSerializer
+    permission_classes = (AllowAny,)
+
+    def create(self, request):
+        """Создает объект User и отправляет пользователю код подтверждения."""
+        serializer = UserCreateSerializer(data=request.data)
+        if User.objects.filter(
+            username=request.data.get('username'),
+            email=request.data.get('email')
+        ).first():
+            user = get_object_or_404(
+                User,
+                username=request.data.get('username')
+            )
+            send_confirmation_code(
+                email=request.data.get('email'),
+                confirmation_code=user.confirmation_code
+            )
+            return Response(request.data, status=status.HTTP_200_OK)
+
+        serializer.is_valid(raise_exception=True)
+        try:
+            user, _ = User.objects.get_or_create(**serializer.validated_data)
+
+        except IntegrityError:
+            return Response(
+                {'error': 'Invalid request'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        confirmation_code = default_token_generator.make_token(user)
+        send_confirmation_code(
+            email=user.email,
+            confirmation_code=confirmation_code
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
