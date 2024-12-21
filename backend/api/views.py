@@ -1,12 +1,10 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
-
-from rest_framework import viewsets, mixins, status
+from django.shortcuts import get_object_or_404
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
 from users.models import User
 from users.serializers import UserCreateSerializer
 from users.utils import send_confirmation_code
