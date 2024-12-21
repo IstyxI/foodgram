@@ -6,9 +6,9 @@ COPY requirements/requirements.txt .
 
 RUN pip install -r requirements.txt --no-cache-dir
 
-COPY ./run_app.sh .
+COPY ./entrypoint.sh .
 
-RUN chmod +x ./run_app.sh
+RUN chmod +x ./entrypoint.sh
 
 COPY . /app/backend
 
