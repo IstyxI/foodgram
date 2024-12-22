@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'djoser',
-    'api.apps.ApiConfig'
+    'api.apps.ApiConfig',
     'users.apps.UsersConfig'
 ]
 
