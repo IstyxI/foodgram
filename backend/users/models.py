@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, Permission
+from django.contrib.auth.models import AbstractUser, Permission, Group
 from django.db import models
 from users.enums import UserRoles
 
@@ -45,8 +45,18 @@ class User(AbstractUser):
         Permission,
         verbose_name='Права доступа',
         blank=True,
-        help_text='Specific permissions for this user.',
-        related_name="custom_user_permissions"  # Добавили related_name
+        help_text='Особенные права для этого пользователя.',
+        related_name="custom_user_permissions"
+    )
+    groups = models.ManyToManyField(
+        Group,
+        verbose_name='Группы',
+        blank=True,
+        help_text=(
+            'Группы, к которым принадлежит этот пользователь. '
+            'Пользователь получит все права выданные группе.'
+        ),
+        related_name="custom_user_groups",
     )
 
     class Meta:
