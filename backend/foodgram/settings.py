@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from distutils.util import strtobool
 from pathlib import Path
 
@@ -110,6 +111,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-TEMPLATE_DIRS = (
-    os.path.join(SETTINGS_PATH, 'templates'),
-)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
