@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
 from users.enums import UserRoles
 
@@ -40,6 +40,13 @@ class User(AbstractUser):
         upload_to='images/avatars/',
         null=True,
         default=None
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        verbose_name='Права доступа',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="custom_user_permissions"  # Добавили related_name
     )
 
     class Meta:
