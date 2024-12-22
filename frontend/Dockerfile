@@ -1,5 +1,5 @@
 # build env
-FROM node:21.7.1-alpine as build # Используем правильный образ node, и даём ему псевдоним `build`
+FROM node:21.7.1-alpine as build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
