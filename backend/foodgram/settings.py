@@ -13,6 +13,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', default='token')
 
 DEBUG = strtobool(os.getenv('DEBUG', 'true'))
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='').split()
+# DEBUG = True
+# ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,7 +24,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'djoser',
+    'drf_yasg',
+    'django_filters',
     'api.apps.ApiConfig',
     'users.apps.UsersConfig'
 ]
@@ -68,6 +73,13 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -102,17 +114,34 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-    ),
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend'],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 5,
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'AUTH_HEADER_TYPES': ('Bearer',),
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'HIDE_USERS': False,
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,
+    'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
+    'SERIALIZERS': {
+        'user': 'api.serializers.CustomUserSerializer',
+        'user_create': 'api.serializers.CustomCreateUserSerializer',
+        'current_user': 'api.serializers.CustomUserSerializer',
+    },
+    'PERMISSIONS': {
+        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+        'user_list': ['rest_framework.permissions.AllowAny']
+    },
 }
+
+AUTH_USER_MODEL = 'users.User'
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+DEFAULT_FROM_EMAIL = 'andrewow2030@gmail.com'

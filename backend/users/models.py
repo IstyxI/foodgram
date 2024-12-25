@@ -1,80 +1,43 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth.models import AbstractUser
 from django.db import models
-from users.enums import UserRoles
-
-from .validators import validate_username_email
 
 
 class User(AbstractUser):
-    """Модель пользователя."""
+    """Модель для пользователей созданная для приложения foodgram"""
 
+    email = models.EmailField(
+        verbose_name='Электронная почта',
+        unique=True
+    )
     username = models.CharField(
         max_length=150,
-        verbose_name='Никнейм',
+        verbose_name='Имя пользователя',
         unique=True,
-        db_index=True,
-        validators=(validate_username_email,)
-    )
-    password = models.CharField(
-        max_length=150,
-        verbose_name='Пароль',
-        blank=True
+        db_index=True
     )
     first_name = models.CharField(
         max_length=150,
-        verbose_name='Имя',
-        blank=True
+        verbose_name='Имя'
     )
     last_name = models.CharField(
         max_length=150,
-        verbose_name='Фамилия',
-        blank=True
-    )
-    email = models.EmailField(
-        max_length=150,
-        verbose_name='Email',
-        unique=True,
-        validators=(validate_username_email,)
+        verbose_name='Фамилия'
     )
     avatar = models.ImageField(
         upload_to='images/avatars/',
         null=True,
         default=None
     )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        verbose_name='Права доступа',
-        blank=True,
-        help_text='Особенные права для этого пользователя.',
-        related_name="custom_user_permissions"
-    )
-    groups = models.ManyToManyField(
-        Group,
-        verbose_name='Группы',
-        blank=True,
-        help_text=(
-            'Группы, к которым принадлежит этот пользователь. '
-            'Пользователь получит все права выданные группе.'
-        ),
-        related_name="custom_user_groups",
-    )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
-        ordering = ('username', 'id')
-        verbose_name = 'User'
+        verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ('username', 'id')
 
-        def __str__(self):
-            return self.username
+    def __str__(self):
+        """Строковое представление модели"""
 
-    @property
-    def is_admin(self):
-        return self.role == UserRoles.ADMIN or self.is_superuser
-
-    @property
-    def is_moderator(self):
-        return self.role == UserRoles.MODERATOR
-
-    @property
-    def is_user(self):
-        return self.role == UserRoles.USER
+        return self.username

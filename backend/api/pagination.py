@@ -1,9 +1,8 @@
 from rest_framework.pagination import PageNumberPagination
 
 
-class LimitPageNumberPagination(PageNumberPagination):
-    """Стандартный пагинатор с определением атрибута
-    `page_size_query_param`, для вывода запрошенного количества страниц.
-    """
+class CustomPagination(PageNumberPagination):
+    """Кастомный пагинатор для вывода 6 элементов на странице."""
 
-    page_size_query_param = "limit"
+    page_size_query_param = 'limit'
+    page_size = 6
