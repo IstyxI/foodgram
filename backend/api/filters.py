@@ -1,8 +1,7 @@
 import django_filters
+from api.models import Ingredient, Recipe, Tag
 from django_filters import rest_framework
 from django_filters.rest_framework import FilterSet
-
-from api.models import Ingredient, Recipe, Tag
 
 
 class IngredientFilter(FilterSet):

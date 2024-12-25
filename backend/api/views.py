@@ -1,31 +1,26 @@
+from api.models import (Favorite, Follow, Ingredient, IngredientInRecipe,
+                        Recipe, ShoppingCart, Tag)
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (
-    AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
-)
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
-from api.models import (
-    Ingredient, Tag, Recipe, Favorite, ShoppingCart, Follow,
-    IngredientInRecipe,
-)
 from users.models import User
+
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (
-    TagSerializer,
-    IngredientSerializer,
-    RecipeSerializer, CustomUserSerializer, CreateRecipeSerializer,
-    FollowSerializer, AddFavoritesSerializer,
-)
+from .serializers import (AddFavoritesSerializer, CreateRecipeSerializer,
+                          CustomUserSerializer, FollowSerializer,
+                          IngredientSerializer, RecipeSerializer,
+                          TagSerializer)
 
 
 class TagViewSet(viewsets.ViewSet):
@@ -44,7 +39,10 @@ class TagViewSet(viewsets.ViewSet):
         try:
             tag = Tag.objects.get(id=pk)
         except Tag.DoesNotExist:
-            return Response({'error': 'Тег не найден.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {'error': 'Тег не найден.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
         serializer = TagSerializer(tag)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -171,7 +169,10 @@ class CustomUserViewSet(UserViewSet):
                 author=author
             )
             subscribe.save()
-            serializer = FollowSerializer(author, context={'request': request}, many=False)
+            serializer = FollowSerializer(
+                author, context={'request': request},
+                many=False
+            )
             return Response(
                 serializer.data,
                 status=status.HTTP_201_CREATED
@@ -213,7 +214,10 @@ class RecipeViewSet(ModelViewSet):
         return context
 
     def create(self, request, *args, **kwargs):
-        """Переопределенный метод для создания рецепта с проверкой на пустой список ингредиентов."""
+        """
+        Переопределенный метод для создания рецепта
+        с проверкой на пустой список ингредиентов.
+        """
         if not request.data:
             return Response(
                 {'error': 'Тело запроса не может быть пустым.'},
@@ -243,7 +247,10 @@ class RecipeViewSet(ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
-        """Переопределенный метод для частичного обновления рецепта с проверкой на пустой список ингредиентов."""
+        """
+        Переопределенный метод для частичного обновления рецепта
+        с проверкой на пустой список ингредиентов.
+        """
         if not request.data:
             return Response(
                 {'error': 'Тело запроса не может быть пустым.'},
