@@ -22,7 +22,7 @@ services:
     restart: always
     env_file: ../.env
     volumes:
-      - static:/frontend_static
+      - static:/app/build
     depends_on:
       - backend
 
