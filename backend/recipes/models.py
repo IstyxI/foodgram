@@ -9,8 +9,12 @@ User = get_user_model()
 class Tag(models.Model):
     """Модель для описания тега"""
 
-    name = models.CharField(max_length=32, unique=True, verbose_name="Название тэга")
-    slug = models.SlugField(max_length=32, unique=True, verbose_name="Уникальный слаг")
+    name = models.CharField(
+        max_length=32, unique=True, verbose_name="Название тэга"
+    )
+    slug = models.SlugField(
+        max_length=32, unique=True, verbose_name="Уникальный слаг"
+    )
 
     class Meta:
         verbose_name = "Тег"
@@ -80,10 +84,12 @@ class Recipe(models.Model):
         ],
     )
     created = models.DateTimeField(
-        auto_now_add=True, db_index=True, verbose_name="Дата публикации рецепта"
+        auto_now_add=True, db_index=True,
+        verbose_name="Дата публикации рецепта"
     )
     short_url = models.CharField(
-        max_length=6, unique=True, blank=True, null=True, verbose_name="Короткая ссылка"
+        max_length=6, unique=True, blank=True, null=True,
+        verbose_name="Короткая ссылка"
     )
 
     class Meta:
@@ -135,7 +141,8 @@ class IngredientInRecipe(models.Model):
         verbose_name_plural = "Ингредиенты в рецептах"
         constraints = [
             models.UniqueConstraint(
-                fields=("recipe", "ingredient"), name="unique_ingredients_in_the_recipe"
+                fields=("recipe", "ingredient"),
+                name="unique_ingredients_in_the_recipe"
             )
         ]
 
@@ -192,7 +199,10 @@ class Follow(models.Model):
         verbose_name = "Подписка"
         verbose_name_plural = "Подписки"
         constraints = [
-            models.UniqueConstraint(fields=["user", "author"], name="unique_follow")
+            models.UniqueConstraint(
+                fields=["user", "author"],
+                name="unique_follow"
+            )
         ]
 
     def __str__(self):
@@ -219,7 +229,10 @@ class Favorite(models.Model):
         verbose_name = "Избранное"
         verbose_name_plural = "Избранное"
         constraints = [
-            models.UniqueConstraint(fields=["user", "recipe"], name="unique_favorite")
+            models.UniqueConstraint(
+                fields=["user", "recipe"],
+                name="unique_favorite"
+            )
         ]
 
     def __str__(self):

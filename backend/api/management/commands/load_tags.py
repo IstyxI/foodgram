@@ -16,4 +16,6 @@ class Command(BaseCommand):
         with open(file_path, newline="", encoding="utf-8") as f:
             reader = csv.reader(f)
             for row in reader:
-                status, created = Tag.objects.update_or_create(name=row[0], slug=row[1])
+                status, created = Tag.objects.update_or_create(
+                    name=row[0], slug=row[1]
+                )

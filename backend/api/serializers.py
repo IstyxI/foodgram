@@ -54,8 +54,8 @@ class CustomUserSerializer(UserCreateSerializer):
         validators=[
             RegexValidator(
                 regex=r"^[\w.@+-]+\Z",
-                message="Имя пользователя должно содержать только буквы, цифры, "
-                "подчеркивания, точки, знаки @, + и -.",
+                message="Имя пользователя должно содержать только буквы, "
+                "цифры, подчеркивания, точки, знаки @, + и -.",
             )
         ],
     )
@@ -91,7 +91,10 @@ class CustomCreateUserSerializer(CustomUserSerializer):
 
     class Meta:
         model = User
-        fields = ("email", "id", "username", "first_name", "last_name", "password")
+        fields = (
+            "email", "id", "username",
+            "first_name", "last_name", "password"
+        )
         extra_kwargs = {"password": {"write_only": True}}
 
 
@@ -100,7 +103,9 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField(source="ingredient.id")
     name = serializers.ReadOnlyField(source="ingredient.name")
-    measurement_unit = serializers.ReadOnlyField(source="ingredient.measurement_unit")
+    measurement_unit = serializers.ReadOnlyField(
+        source="ingredient.measurement_unit"
+    )
 
     class Meta:
         model = IngredientInRecipe
@@ -147,7 +152,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
             return False
-        return ShoppingCart.objects.filter(user=request.user, recipe=obj).exists()
+        return ShoppingCart.objects.filter(
+            user=request.user, recipe=obj
+        ).exists()
 
 
 class CreateIngredientsInRecipeSerializer(serializers.ModelSerializer):
@@ -177,12 +184,17 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     ingredients = CreateIngredientsInRecipeSerializer(
         many=True, required=True, allow_null=False
     )
-    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all()
+    )
     image = Base64ImageField(use_url=True)
 
     class Meta:
         model = Recipe
-        fields = ("ingredients", "tags", "name", "image", "text", "cooking_time")
+        fields = (
+            "ingredients", "tags", "name",
+            "image", "text", "cooking_time"
+        )
 
     def to_representation(self, instance):
         """Метод представления модели"""
@@ -203,8 +215,12 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
                 "Список ингредиентов не может быть пустым!"
             )
 
-        if len(ingredients) != len(set(ingredient["id"] for ingredient in ingredients)):
-            raise serializers.ValidationError("Ингредиенты должны быть уникальными!")
+        if len(ingredients) != len(
+            set(ingredient["id"] for ingredient in ingredients)
+        ):
+            raise serializers.ValidationError(
+                "Ингредиенты должны быть уникальными!"
+            )
 
         if not tags:
             raise serializers.ValidationError("Тег не может быть None!")
@@ -256,7 +272,9 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
                 "Поле ingredients обязательно для обновления!"
             )
         if "tags" not in validated_data:
-            raise serializers.ValidationError("Поле tags обязательно для обновления!")
+            raise serializers.ValidationError(
+                "Поле tags обязательно для обновления!"
+            )
 
         IngredientInRecipe.objects.filter(recipe=instance).delete()
 

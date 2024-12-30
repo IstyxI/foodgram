@@ -14,7 +14,10 @@ class IngredientAdmin(ModelAdmin):
 
 @register(Recipe)
 class RecipeAdmin(ModelAdmin):
-    list_display = ("pk", "name", "author", "get_favorites", "get_tags", "created")
+    list_display = (
+        "pk", "name", "author",
+        "get_favorites", "get_tags", "created"
+    )
     list_filter = ("author", "name", "tags")
     search_fields = ("name",)
 

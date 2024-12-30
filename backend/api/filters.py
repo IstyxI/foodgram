@@ -19,7 +19,9 @@ class RecipeFilter(django_filters.FilterSet):
     """Фильтр для отображения избранного и списка покупок"""
 
     tags = django_filters.filters.ModelMultipleChoiceFilter(
-        queryset=Tag.objects.all(), field_name="tags__slug", to_field_name="slug"
+        queryset=Tag.objects.all(),
+        field_name="tags__slug",
+        to_field_name="slug"
     )
     is_favorited = django_filters.filters.NumberFilter(
         method="is_recipe_in_favorites_filter"

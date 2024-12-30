@@ -79,7 +79,9 @@ class CustomUserViewSet(UserViewSet):
     )
     def me(self, request):
         """Метод для получения информации о текущем пользователе."""
-        serializer = self.serializer_class(request.user, context={"request": request})
+        serializer = self.serializer_class(
+            request.user, context={"request": request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
@@ -117,7 +119,8 @@ class CustomUserViewSet(UserViewSet):
             )
 
         return Response(
-            {"error": "Метод не разрешен."}, status=status.HTTP_405_METHOD_NOT_ALLOWED
+            {"error": "Метод не разрешен."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
 
     @action(
@@ -129,9 +132,9 @@ class CustomUserViewSet(UserViewSet):
     )
     def subscriptions(self, request):
         """Метод для создания страницы подписок."""
-        queryset = User.objects.filter(follower__user=self.request.user).annotate(
-            recipes_count=Count("recipes")
-        )
+        queryset = User.objects.filter(
+            follower__user=self.request.user
+        ).annotate(recipes_count=Count("recipes"))
         if queryset:
             pages = self.paginate_queryset(queryset)
             serializer = FollowSerializer(
@@ -160,7 +163,9 @@ class CustomUserViewSet(UserViewSet):
                 data={"author_id": id}, context={"request": request}
             )
             serializer.is_valid(raise_exception=True)
-            change_subscription_status = Follow.objects.filter(user=user, author=author)
+            change_subscription_status = Follow.objects.filter(
+                user=user, author=author
+            )
             if change_subscription_status.exists():
                 return Response(
                     f"Вы теперь подписаны на {author}",
@@ -238,10 +243,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == "POST":
             if Favorite.objects.filter(user=user, recipe=recipe).exists():
                 return Response(
-                    {
-                        "errors": f'Повторно - "{recipe.name}" добавить нельзя,'
-                        f"он уже есть в избранном у пользователя"
-                    },
+                    {"errors": f'Повторно - "{recipe.name}" добавить нельзя,'
+                        f"он уже есть в избранном у пользователя"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             serializer = FavoriteSerializer(
@@ -277,10 +280,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == "POST":
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
                 return Response(
-                    {
-                        "errors": f'Повторно - "{recipe.name}" добавить нельзя,'
-                        f"он уже есть в списке покупок"
-                    },
+                    {"errors": f'Повторно - "{recipe.name}" добавить нельзя,'
+                        f"он уже есть в списке покупок"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             ShoppingCart.objects.create(user=user, recipe=recipe)
