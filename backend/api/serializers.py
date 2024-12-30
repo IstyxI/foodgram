@@ -75,7 +75,6 @@ class CustomUserSerializer(UserCreateSerializer):
 
     def get_is_subscribed(self, obj):
         """Метод проверки подписки"""
-
         user = self.context.get("request").user
         if user.is_anonymous:
             return False
@@ -83,8 +82,7 @@ class CustomUserSerializer(UserCreateSerializer):
 
 
 class CustomCreateUserSerializer(CustomUserSerializer):
-    """Сериализатор для создания пользователя
-    без проверки на подписку"""
+    """Сериализатор для создания пользователя."""
 
     is_subscribed = serializers.SerializerMethodField()
     avatar = Base64ImageField(required=False, allow_null=True)
@@ -140,7 +138,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         """Метод проверки на добавление в избранное."""
-
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
             return False
@@ -148,7 +145,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         """Метод проверки на присутствие в корзине."""
-
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
             return False
@@ -170,7 +166,6 @@ class CreateIngredientsInRecipeSerializer(serializers.ModelSerializer):
     @staticmethod
     def validate_amount(value):
         """Метод валидации количества"""
-
         if value < 1:
             raise serializers.ValidationError(
                 "Количество ингредиента должно быть больше 0!"
@@ -198,7 +193,6 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Метод представления модели"""
-
         serializer = RecipeSerializer(
             instance, context={"request": self.context.get("request")}
         )
@@ -206,7 +200,6 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Метод валидации ингредиентов"""
-
         tags = self.initial_data.get("tags", [])
         ingredients = self.initial_data.get("ingredients", [])
 
@@ -266,7 +259,6 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Метод обновления модели"""
-
         if "ingredients" not in validated_data:
             raise serializers.ValidationError(
                 "Поле ingredients обязательно для обновления!"
@@ -316,7 +308,6 @@ class FollowSerializer(CustomUserSerializer):
 
     def get_recipes(self, obj):
         """Метод для получения рецептов"""
-
         request = self.context.get("request")
         recipes = obj.recipes.all()
         recipes_limit = request.query_params.get("recipes_limit", 10)
@@ -327,7 +318,6 @@ class FollowSerializer(CustomUserSerializer):
     @staticmethod
     def get_recipes_count(obj):
         """Метод для получения количества рецептов"""
-
         return obj.recipes.count()
 
 
