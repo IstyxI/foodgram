@@ -29,7 +29,6 @@ class Tag(models.Model):
         )
 
     def __str__(self):
-        """Метод строкового представления модели."""
         return self.name
 
 
@@ -46,15 +45,11 @@ class Ingredient(models.Model):
         verbose_name='Единицы измерения')
 
     class Meta:
-        """Мета-параметры модели"""
-
         ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
     def __str__(self):
-        """Метод строкового представления модели."""
-
         return f'{self.name}, {self.measurement_unit}'
 
 
@@ -81,7 +76,6 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        through='IngredientInRecipe',
         related_name='recipes',
         verbose_name='Ингредиенты',
         null=False,
@@ -90,7 +84,8 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
-        verbose_name='Теги'
+        verbose_name='Теги',
+        help_text='Выберите теги рецепта'
     )
     cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления',
@@ -112,8 +107,6 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        """Мета-параметры модели"""
-
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ('-created',)
@@ -158,8 +151,6 @@ class IngredientInRecipe(models.Model):
     )
 
     class Meta:
-        """Мета-параметры модели"""
-
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецептах'
         constraints = [
@@ -170,40 +161,7 @@ class IngredientInRecipe(models.Model):
         ]
 
     def __str__(self):
-        """Метод строкового представления модели."""
-
         return f'{self.ingredient} {self.recipe}'
-
-
-class TagInRecipe(models.Model):
-    """Создание модели тегов рецепта."""
-
-    tag = models.ForeignKey(
-        Tag,
-        on_delete=models.CASCADE,
-        verbose_name='Теги',
-        help_text='Выберите теги рецепта'
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        help_text='Выберите рецепт')
-
-    class Meta:
-        """Мета-параметры модели"""
-
-        verbose_name = 'Тег рецепта'
-        verbose_name_plural = 'Теги рецепта'
-        constraints = [
-            models.UniqueConstraint(fields=['tag', 'recipe'],
-                                    name='unique_tagrecipe')
-        ]
-
-    def __str__(self):
-        """Метод строкового представления модели."""
-
-        return f'{self.tag} {self.recipe}'
 
 
 class ShoppingCart(models.Model):
@@ -223,8 +181,6 @@ class ShoppingCart(models.Model):
     )
 
     class Meta:
-        """Мета-параметры модели"""
-
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
         constraints = [
@@ -234,13 +190,11 @@ class ShoppingCart(models.Model):
         ]
 
     def __str__(self):
-        """Метод строкового представления модели."""
-
         return f'{self.user} {self.recipe}'
 
 
 class Follow(models.Model):
-    """ Модель для создания подписок на автора"""
+    """Модель для создания подписок на автора"""
 
     author = models.ForeignKey(
         User,
@@ -256,8 +210,6 @@ class Follow(models.Model):
     )
 
     class Meta:
-        """Мета-параметры модели"""
-
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
@@ -267,8 +219,6 @@ class Follow(models.Model):
         ]
 
     def __str__(self):
-        """Метод строкового представления модели."""
-
         return f'{self.user} {self.author}'
 
 
@@ -289,8 +239,6 @@ class Favorite(models.Model):
     )
 
     class Meta:
-        """Мета-параметры модели"""
-
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
         constraints = [
@@ -300,6 +248,4 @@ class Favorite(models.Model):
         ]
 
     def __str__(self):
-        """Метод строкового представления модели."""
-
         return f'{self.user} {self.recipe}'

@@ -38,6 +38,5 @@ class User(AbstractUser):
         ordering = ('username', 'id')
 
     def __str__(self):
-        """Строковое представление модели"""
-
+        """Строковое представление модели."""
         return self.username
