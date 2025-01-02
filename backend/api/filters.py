@@ -29,6 +29,9 @@ class RecipeFilter(django_filters.FilterSet):
     is_in_shopping_cart = django_filters.filters.NumberFilter(
         method="is_recipe_in_shoppingcart_filter"
     )
+    author = django_filters.filters.AllValuesMultipleFilter(
+        field_name='author__id'
+    )
 
     class Meta:
         model = Recipe

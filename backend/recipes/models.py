@@ -97,12 +97,8 @@ class Recipe(models.Model):
         verbose_name_plural = "Рецепты"
         ordering = ("-created",)
 
-    def generate_short_url(self):
-        """Генерирует уникальный короткий код."""
-        while True:
-            short_url = get_random_string(length=6)
-            if not Recipe.objects.filter(short_url=short_url).exists():
-                return short_url
+    def __str__(self):
+        return self.name
 
     def save(self, *args, **kwargs):
         """Переопределяем метод save для генерации короткой ссылки."""
@@ -110,8 +106,12 @@ class Recipe(models.Model):
             self.short_url = self.generate_short_url()
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.name
+    def generate_short_url(self):
+        """Генерирует уникальный короткий код."""
+        while True:
+            short_url = get_random_string(length=6)
+            if not Recipe.objects.filter(short_url=short_url).exists():
+                return short_url
 
 
 class IngredientInRecipe(models.Model):
@@ -151,7 +151,7 @@ class IngredientInRecipe(models.Model):
 
 
 class ShoppingCart(models.Model):
-    """Модель для описания формирования покупок"""
+    """Модель для описания формирования покупок."""
 
     user = models.ForeignKey(
         User,

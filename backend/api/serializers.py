@@ -1,12 +1,14 @@
 import base64
 
 from django.core.files.base import ContentFile
-from django.core.validators import RegexValidator
+from django.core.files.storage import default_storage
+from django.core.validators import MinValueValidator, RegexValidator
 
 from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ModelSerializer
+from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import (
     Favorite, Follow, Ingredient, IngredientInRecipe, Recipe, ShoppingCart,
@@ -19,12 +21,25 @@ class Base64ImageField(serializers.ImageField):
     """Кастомное поле для кодирования изображения в base64."""
 
     def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith("data:image"):
-            format, imgstr = data.split(";base64,")
-            ext = format.split("/")[-1]
-            data = ContentFile(base64.b64decode(imgstr), name="photo." + ext)
-
+        """Декодируем base64 строку в файл."""
+        if isinstance(data, str) and data.startswith('data:'):
+            header, encoded = data.split(';')
+            _, encoded = encoded.split(',')
+            decoded = base64.b64decode(encoded)
+            ext = header.split('/')[-1]
+            file_name = f"avatar_{self.context['request'].user.id}.{ext}"
+            return ContentFile(decoded, name=file_name)
         return super().to_internal_value(data)
+
+    def delete(self, instance, save):
+        """Удаляет файл с сервера, делает avatar = None."""
+        if not instance.avatar:
+            return
+        file_name = instance.avatar.name
+        default_storage.delete(file_name)
+        instance.avatar = None
+        if save:
+            instance.save()
 
 
 class TagSerializer(ModelSerializer):
@@ -45,7 +60,7 @@ class IngredientSerializer(ModelSerializer):
 
 
 class CustomUserSerializer(UserCreateSerializer):
-    """Сериализатор для модели User."""
+    """Проверяет/отдаёт данные."""
 
     is_subscribed = serializers.SerializerMethodField()
     avatar = Base64ImageField(required=False, allow_null=True)
@@ -74,18 +89,15 @@ class CustomUserSerializer(UserCreateSerializer):
         read_only_fields = ("id", "password")
 
     def get_is_subscribed(self, obj):
-        """Метод проверки подписки"""
+        """Проверка подписки."""
         user = self.context.get("request").user
         if user.is_anonymous:
             return False
         return Follow.objects.filter(user=user, author=obj.id).exists()
 
 
-class CustomCreateUserSerializer(CustomUserSerializer):
-    """Сериализатор для создания пользователя."""
-
-    is_subscribed = serializers.SerializerMethodField()
-    avatar = Base64ImageField(required=False, allow_null=True)
+class CustomUserCreateSerializer(serializers.ModelSerializer):
+    """Проверяет/отдаёт данные пользователя при создании."""
 
     class Meta:
         model = User
@@ -137,14 +149,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        """Метод проверки на добавление в избранное."""
+        """Проверка на добавление в избранное."""
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
             return False
         return Favorite.objects.filter(user=request.user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        """Метод проверки на присутствие в корзине."""
+        """Проверка на присутствие в корзине."""
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
             return False
@@ -154,27 +166,20 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class CreateIngredientsInRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для ингредиентов в рецептах"""
+    """Сериализатор для создания ингредиентов в рецепте."""
 
     id = serializers.IntegerField(required=True)
-    amount = serializers.IntegerField(required=True)
+    amount = serializers.IntegerField(
+        required=True, validators=[MinValueValidator(1)]
+    )
 
     class Meta:
         model = IngredientInRecipe
         fields = ("id", "amount")
 
-    @staticmethod
-    def validate_amount(value):
-        """Метод валидации количества"""
-        if value < 1:
-            raise serializers.ValidationError(
-                "Количество ингредиента должно быть больше 0!"
-            )
-        return value
-
 
 class CreateRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания рецептов"""
+    """Создаёт/валидирует рецепты."""
 
     ingredients = CreateIngredientsInRecipeSerializer(
         many=True, required=True, allow_null=False
@@ -192,14 +197,14 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        """Метод представления модели"""
+        """Метод представления модели."""
         serializer = RecipeSerializer(
             instance, context={"request": self.context.get("request")}
         )
         return serializer.data
 
     def validate(self, data):
-        """Метод валидации ингредиентов"""
+        """Валидация ингредиентов."""
         tags = self.initial_data.get("tags", [])
         ingredients = self.initial_data.get("ingredients", [])
 
@@ -223,7 +228,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create_ingredients(self, ingredients, recipe):
-        """Метод создания ингредиента"""
+        """Создание ингредиента."""
         ingredients_to_create = []
         for element in ingredients:
             serializer = CreateIngredientsInRecipeSerializer(data=element)
@@ -243,12 +248,11 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         IngredientInRecipe.objects.bulk_create(ingredients_to_create)
 
     def create_tags(self, tags, recipe):
-        """Метод добавления тега"""
-
+        """Добавление тега."""
         recipe.tags.set(tags)
 
     def create(self, validated_data):
-        """Метод создания модели"""
+        """Создание модели."""
         ingredients = validated_data.pop("ingredients")
         tags = validated_data.pop("tags")
         user = self.context.get("request").user
@@ -258,16 +262,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        """Метод обновления модели"""
-        if "ingredients" not in validated_data:
-            raise serializers.ValidationError(
-                "Поле ingredients обязательно для обновления!"
-            )
-        if "tags" not in validated_data:
-            raise serializers.ValidationError(
-                "Поле tags обязательно для обновления!"
-            )
-
+        """Обновление модели."""
         IngredientInRecipe.objects.filter(recipe=instance).delete()
 
         self.create_ingredients(validated_data.pop("ingredients"), instance)
@@ -277,7 +272,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
 
 class AdditionalForRecipeSerializer(serializers.ModelSerializer):
-    """Дополнительный сериализатор для рецептов"""
+    """Дополнительный сериализатор для рецептов."""
 
     class Meta:
         model = Recipe
@@ -285,7 +280,7 @@ class AdditionalForRecipeSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(CustomUserSerializer):
-    """Сериализатор для модели Follow."""
+    """Используется для получения данных."""
 
     recipes = serializers.SerializerMethodField(
         read_only=True, method_name="get_recipes"
@@ -307,7 +302,7 @@ class FollowSerializer(CustomUserSerializer):
         )
 
     def get_recipes(self, obj):
-        """Метод для получения рецептов"""
+        """Получение рецептов."""
         request = self.context.get("request")
         recipes = obj.recipes.all()
         recipes_limit = request.query_params.get("recipes_limit", 10)
@@ -315,47 +310,104 @@ class FollowSerializer(CustomUserSerializer):
             recipes = recipes[: int(recipes_limit)]
         return ShortRecipeSerializer(recipes, many=True).data
 
-    @staticmethod
-    def get_recipes_count(obj):
-        """Метод для получения количества рецептов"""
-        return obj.recipes.count()
-
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
-    """Сериализатор для краткого отображения рецептов"""
+    """Краткий ериализатор для вывода данных."""
 
     class Meta:
         model = Recipe
         fields = ("id", "name", "image", "cooking_time")
 
 
-class SubscriptionSerializer(serializers.Serializer):
-    author_id = serializers.IntegerField(required=True)
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Создаёт/валидирует подписку на пользователя."""
 
-    def validate_author_id(self, value):
-        user = self.context["request"].user
-        try:
-            author = User.objects.get(id=value)
-        except User.DoesNotExist:
-            raise ValidationError("Автор не найден.")
-        if user == author:
-            raise ValidationError("Вы не можете подписаться на самого себя.")
-        return author.id
+    class Meta:
+        model = Follow
+        fields = ("user", "author")
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Follow.objects.all(),
+                fields=("user", "author"),
+            )
+        ]
 
     def create(self, validated_data):
-        """Метод создания модели"""
+        """Создаёт подписку."""
         user = self.context.get("request").user
-        author = User.objects.get(pk=validated_data["author_id"])
+        author = User.objects.get(pk=validated_data["author"].id)
         return Follow.objects.create(user=user, author=author)
+
+    def validate(self, data):
+        """Проверки на корректность подписки."""
+        user = data.get("user")
+        author = data.get("author")
+        if user == author:
+            raise serializers.ValidationError(
+                "Вы не можете подписаться на самого себя!"
+            )
+        if Follow.objects.filter(user=user, author=author).exists():
+            raise serializers.ValidationError(
+                "Вы уже подписаны на этого пользователя!"
+            )
+        return data
 
 
 class FavoriteSerializer(serializers.Serializer):
-    """Сериализатор для Избранных рецептов"""
+    """Сохранаяет/валидирует избранные рецепты."""
 
     recipe_id = serializers.IntegerField(required=True)
 
     def create(self, validated_data):
-        """Метод создания модели"""
+        """Сохранаяет рецепт в избранное."""
         user = self.context.get("request").user
         recipe = Recipe.objects.get(pk=validated_data["recipe_id"])
         return Favorite.objects.create(user=user, recipe=recipe)
+
+    def validate(self, data):
+        user = self.context.get("request").user
+        recipe = data.get("recipe_id")
+        if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError(
+                "Нельзя добавлять рецепты с одинаковыми именами, "
+                "он уже есть в избранном у пользователя"
+            )
+        return data
+
+
+class ShoppingCartSerializer(serializers.Serializer):
+    """Создаёт/валидирует корзину."""
+
+    recipe_id = serializers.IntegerField(required=True)
+
+    def create(self, validated_data):
+        user = self.context.get("request").user
+        recipe = Recipe.objects.get(pk=validated_data["recipe_id"])
+        return ShoppingCart.objects.create(user=user, recipe=recipe)
+
+    def validate(self, data):
+        user = self.context.get("request").user
+        recipe = data.get("recipe_id")
+        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError(
+                "Нельзя добавлять рецепты с одинаковыми именами, "
+                "он уже есть в избранном у пользователя"
+            )
+        return data
+
+
+class DjoserCustomUserSerializer(DjoserUserSerializer):
+    """Кастомный сериализатор для Djoser."""
+    avatar = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'username',
+            'first_name', 'last_name', 'avatar'
+        )
+
+    def validate(self, data):
+        if not data.get("avatar"):
+            raise serializers.ValidationError("Аватар не предоставлен.")
+        return data

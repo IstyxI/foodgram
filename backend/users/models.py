@@ -3,7 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """Модель для пользователей созданная для приложения foodgram"""
+    """Модель для пользователей созданная для приложения foodgram."""
 
     email = models.EmailField(verbose_name="Электронная почта", unique=True)
     username = models.CharField(
@@ -13,7 +13,7 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=150, verbose_name="Имя")
     last_name = models.CharField(max_length=150, verbose_name="Фамилия")
     avatar = models.ImageField(
-        upload_to="images/avatars/", null=True,
+        upload_to="avatars/", null=True,
         default=None
     )
 

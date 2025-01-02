@@ -131,13 +131,15 @@ DJOSER = {
     "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
     "SERIALIZERS": {
         "user": "api.serializers.CustomUserSerializer",
-        "user_create": "api.serializers.CustomCreateUserSerializer",
+        "user_create": "api.serializers.UserCreateSerializer",
         "current_user": "api.serializers.CustomUserSerializer",
     },
     "PERMISSIONS": {
         "user": ["djoser.permissions.CurrentUserOrAdminOrReadOnly"],
         "user_list": ["rest_framework.permissions.AllowAny"],
     },
+    'PASSWORD_VALIDATORS': [],
+    "USER_CREATE_PASSWORD_RETYPE": False,
 }
 
 AUTH_USER_MODEL = "users.User"
