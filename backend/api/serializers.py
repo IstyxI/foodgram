@@ -1,7 +1,6 @@
 import base64
 
 from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.core.validators import MinValueValidator, RegexValidator
 
 from djoser.serializers import UserCreateSerializer
@@ -22,24 +21,19 @@ class Base64ImageField(serializers.ImageField):
 
     def to_internal_value(self, data):
         """Декодируем base64 строку в файл."""
-        if isinstance(data, str) and data.startswith('data:'):
-            header, encoded = data.split(';')
-            _, encoded = encoded.split(',')
+        if isinstance(data, str) and data.startswith("data:"):
+            header, encoded = data.split(";")
+            _, encoded = encoded.split(",")
             decoded = base64.b64decode(encoded)
-            ext = header.split('/')[-1]
-            file_name = f"avatar_{self.context['request'].user.id}.{ext}"
+            ext = header.split("/")[-1]
+            if self.context["request"].data.get("avatar", None) is not None:
+                file_name = f"avatar_{self.context['request'].user.id}.{ext}"
+            else:
+                file_name = (
+                    f"recipe-photo_{self.context['request'].user.id}.{ext}"
+                )
             return ContentFile(decoded, name=file_name)
         return super().to_internal_value(data)
-
-    def delete(self, instance, save):
-        """Удаляет файл с сервера, делает avatar = None."""
-        if not instance.avatar:
-            return
-        file_name = instance.avatar.name
-        default_storage.delete(file_name)
-        instance.avatar = None
-        if save:
-            instance.save()
 
 
 class TagSerializer(ModelSerializer):
@@ -334,8 +328,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Создаёт подписку."""
-        user = self.context.get("request").user
-        author = User.objects.get(pk=validated_data["author"].id)
+        user = validated_data.get("user")
+        author = validated_data.get("author")
         return Follow.objects.create(user=user, author=author)
 
     def validate(self, data):
@@ -353,20 +347,22 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return data
 
 
-class FavoriteSerializer(serializers.Serializer):
+class FavoriteSerializer(serializers.ModelSerializer):
     """Сохранаяет/валидирует избранные рецепты."""
 
-    recipe_id = serializers.IntegerField(required=True)
+    class Meta:
+        model = Favorite
+        fields = ("recipe", "user")
 
     def create(self, validated_data):
         """Сохранаяет рецепт в избранное."""
-        user = self.context.get("request").user
-        recipe = Recipe.objects.get(pk=validated_data["recipe_id"])
+        user = validated_data.get("user")
+        recipe = validated_data.get("recipe")
         return Favorite.objects.create(user=user, recipe=recipe)
 
     def validate(self, data):
-        user = self.context.get("request").user
-        recipe = data.get("recipe_id")
+        user = data.get("user")
+        recipe = data.get("recipe")
         if Favorite.objects.filter(user=user, recipe=recipe).exists():
             raise serializers.ValidationError(
                 "Нельзя добавлять рецепты с одинаковыми именами, "
@@ -375,19 +371,21 @@ class FavoriteSerializer(serializers.Serializer):
         return data
 
 
-class ShoppingCartSerializer(serializers.Serializer):
+class ShoppingCartSerializer(serializers.ModelSerializer):
     """Создаёт/валидирует корзину."""
 
-    recipe_id = serializers.IntegerField(required=True)
+    class Meta:
+        model = ShoppingCart
+        fields = ("recipe", "user")
 
     def create(self, validated_data):
         user = self.context.get("request").user
-        recipe = Recipe.objects.get(pk=validated_data["recipe_id"])
+        recipe = validated_data.get("recipe")
         return ShoppingCart.objects.create(user=user, recipe=recipe)
 
     def validate(self, data):
         user = self.context.get("request").user
-        recipe = data.get("recipe_id")
+        recipe = data.get("recipe")
         if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
             raise serializers.ValidationError(
                 "Нельзя добавлять рецепты с одинаковыми именами, "
@@ -398,13 +396,14 @@ class ShoppingCartSerializer(serializers.Serializer):
 
 class DjoserCustomUserSerializer(DjoserUserSerializer):
     """Кастомный сериализатор для Djoser."""
+
     avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
         fields = (
-            'id', 'email', 'username',
-            'first_name', 'last_name', 'avatar'
+            "id", "email", "username",
+            "first_name", "last_name", "avatar"
         )
 
     def validate(self, data):
