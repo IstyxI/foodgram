@@ -148,3 +148,4 @@ EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
 DEFAULT_FROM_EMAIL = "andrewow2030@gmail.com"
 CSV_FILES_DIR = os.path.join(BASE_DIR, "data")
+CSRF_COOKIE_SECURE = True
