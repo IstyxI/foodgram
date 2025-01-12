@@ -106,7 +106,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = "/static/"
-STATIC_ROOT = "/app/backend/collected_static/static"
+STATIC_ROOT = "/app/collected_static/"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = "/app/media/"
