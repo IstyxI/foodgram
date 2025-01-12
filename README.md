@@ -111,7 +111,6 @@ sudo docker-compose up -d --build
 
 ## Проект в интернете
 Проект запущен и доступен по ссылке [foodgramm.zapto.org](http://foodgramm.zapto.org/)
-Данные:
 * Ip сервера: 84.201.165.222
 * email: superuseremail@gmail.com
 * password: Superpassword123
