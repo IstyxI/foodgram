@@ -14,6 +14,7 @@ from recipes.models import (
     Tag,
 )
 from users.models import User
+
 from .pagination import PaginationForRecipes
 
 
