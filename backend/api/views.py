@@ -130,8 +130,8 @@ class CustomUserViewSet(UserViewSet):
     def subscriptions(self, request):
         """Метод для создания страницы подписок."""
         queryset = User.objects.filter(
-            follower__user=self.request.user
-        ).annotate(recipes_count=Count("recipes"))
+            follow__user=self.request.user
+        )
         pages = self.paginate_queryset(queryset)
         serializer = FollowSerializer(
             pages, many=True, context={"request": request}

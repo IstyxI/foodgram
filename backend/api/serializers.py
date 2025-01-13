@@ -14,6 +14,7 @@ from recipes.models import (
     Tag,
 )
 from users.models import User
+from .pagination import PaginationForRecipes
 
 
 class Base64ImageField(serializers.ImageField):
@@ -276,10 +277,8 @@ class AdditionalForRecipeSerializer(serializers.ModelSerializer):
 class FollowSerializer(CustomUserSerializer):
     """Используется для получения данных."""
 
-    recipes = serializers.SerializerMethodField(
-        read_only=True, method_name="get_recipes"
-    )
-    recipes_count = serializers.IntegerField(default=0)
+    recipes = serializers.SerializerMethodField(read_only=True,)
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -302,7 +301,17 @@ class FollowSerializer(CustomUserSerializer):
         recipes_limit = request.query_params.get("recipes_limit", 10)
         if recipes_limit:
             recipes = recipes[: int(recipes_limit)]
-        return ShortRecipeSerializer(recipes, many=True).data
+        paginator = PaginationForRecipes()
+        page = paginator.paginate_queryset(recipes, self.context['request'])
+        serializer = ShortRecipeSerializer(page, many=True)
+        return paginator.get_paginated_response(
+            serializer.data
+        ).data['results']
+
+    def get_recipes_count(self, obj):
+        recipes_count = Recipe.objects.filter(author=obj).count()
+        result = max(recipes_count - 3, 0)
+        return result
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
