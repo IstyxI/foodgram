@@ -11,5 +11,5 @@ class MyUserAdmin(UserAdmin):
         "first_name", "last_name", "password"
     )
     list_filter = ("username", "email")
-    list_display_links = ["username",]
+    list_display_links = ["username", ]
     search_fields = ("username", "email")
