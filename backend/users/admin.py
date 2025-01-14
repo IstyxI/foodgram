@@ -10,6 +10,5 @@ class MyUserAdmin(UserAdmin):
         "pk", "username", "email",
         "first_name", "last_name", "password"
     )
-    list_filter = ("username", "email")
-    list_display_links = ["username", ]
-    search_fields = ("username", "email")
+    list_display_links = ("username", )
+    search_fields = ("username", "email", "first_name", "last_name")
