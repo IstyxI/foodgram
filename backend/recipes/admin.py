@@ -19,7 +19,7 @@ class RecipeAdmin(ModelAdmin):
     )
     list_display_links = ("name", "author")
     list_filter = ("tags", )
-    search_fields = ("name", "author")
+    search_fields = ("name", "author__username")
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
