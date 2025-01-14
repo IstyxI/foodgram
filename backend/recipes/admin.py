@@ -64,7 +64,7 @@ class FollowAdmin(ModelAdmin):
 @register(Favorite)
 class FavoriteAdmin(ModelAdmin):
     list_display = ("pk", "user", "recipe")
-    list_display_links = ("user", "recipe")
+    list_display_links = ("user", )
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
