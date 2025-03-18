@@ -108,9 +108,3 @@ sudo docker-compose up -d --build
     sudo docker-compose exec backend python manage.py createsuperuser
     ```
     - Проект будет доступен по вашему IP
-
-## Проект в интернете
-Проект запущен и доступен по ссылке [foodgramm.zapto.org](http://foodgramm.zapto.org/)
-* Ip сервера: 84.201.165.222
-* email: superuseremail@gmail.com
-* password: Superpassword123
